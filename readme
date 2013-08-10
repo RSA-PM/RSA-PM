@@ -1,0 +1,66 @@
+Scroll down for building instructions
+
+What is it? Simple software to send encrypted messages to others having as much information (such as who you are) encrypted or unknown.
+
+How it works?
+
+When I write messages to a user the entire message is encrypted using AES and the AES key is encrypted using RSA. **The only thing not encrypted is the public key the message should be delivered to**. The client and server verifies eachother using the other public key. Once confirmed the server delivers the messages for that particular public key to the client and deletes it once the client sends a confirmation.
+
+There are 3 messages a person can receive. An anonymous or 'unsigned' message which could have been from anyone. A signed message where you know their public key which again could be from anyone unless you know the key. Or a forged key which you should never see unless the signing implementation of the client is broken, has been changed or if someone is trying to pretend to be someone else forging their public key.
+
+How to use it? 
+Step 0: Setup the client. You will only get replies from users who use the same server as you.
+Step 1: Run the client right click the left side an select "Create New...". Name it something like "Public Generic". After the prompt right click the new account and select "Copy Public key"
+Step 2: Send the public key to your friend and ask him or her to send you a message with their public key
+Step 3: After receiving the message create a new account so you'll have a new key and message your friend from it.
+
+Step 3 is necessary. If you post your public key for the public, people who know it and control the server can assume every message for your public key is going to you. Which may be anonymous but step 3 makes it more anonymous as no one will know who the public key belongs to
+
+
+To build the client create a C# winform project and include the following references which can be found using nuget.
+BouncyCastle
+DotNetZip
+SQLite
+
+If you wish you can set the path of database filename using an app.config file
+
+<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+  <appSettings>
+    <add key="dbfile" value="path/to/RSA-PM.sqlite3"/>
+  </appSettings>
+</configuration>
+
+The client expects the server public key as pem file in one long line. Be sure to add all files in client and shared
+
+To build the server create a C# console project and include the following references which can be found using nuget.
+BouncyCastle
+MySql
+
+
+Here is an example of creating a public/private key to use with the server
+openssl genrsa 1024 > server.pem
+openssl rsa -in server.pem -pubout > server_pub.pem
+
+Please provide the public key as one line. Test the line with the client to ensure it works correctly
+
+Here is a config example for the server.
+
+<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+  <appSettings>
+    <add key="ip_addr" value="0.0.0.0" />
+    <add key="port" value="10101" />
+    <add key="pem_prv_key" value="server.pem" />
+    <add key="backlog" value="50" />
+    <add key="mysql_conn_str" value="SERVER=localhost;DATABASE=rsa-pm-db;UID=rsa-pm-user;PASSWORD=somepassword;" />
+  </appSettings>
+</configuration>
+
+ip_addr is the ip address of the device to bind. "0.0.0.0" means any available.
+pem_prv_key is the location of the server private key
+pem_prv_key_pw is the password if it is password protected
+backlog is the maximum length of the pending connections queue
+mysql_conn_str is the connection string for mysql. It should provide server, database and user/password
+
+Be sure to include all files in the server folder and in shared.
